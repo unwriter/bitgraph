@@ -1,0 +1,1041 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width">
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:creator" content="@_unwriter" />
+<meta name="twitter:title" content="bitgraph" />
+<meta name="twitter:description" content="Bitcoin graph explorer" />
+<meta name="twitter:image" content="https://bitgraph.network/bitgraph.png" />
+<meta property="og:url" content="https://bitgraph.network" />
+<meta property="og:type"   content="website" />
+<meta property="og:title" content="bitgraph" />
+<meta property="og:description" content="Bitcoin graph explorer" />
+<meta property="og:image" content="https://bitgraph.network/bitgraph.png" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.4.2/cytoscape.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.js"></script>
+<script src="https://unpkg.com/dagre@0.7.4/dist/dagre.js"></script>
+<script src="https://cytoscape.org/cytoscape.js-dagre/cytoscape-dagre.js"></script>
+<script src="https://unpkg.com/klayjs@0.4.1/klay.js"></script>
+<script src="https://cytoscape.org/cytoscape.js-klay/cytoscape-klay.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.0.4/jscolor.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/noty/3.1.4/noty.min.css" rel="stylesheet">
+<style>
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  background: rgba(0,0,0,0.95);
+  font-family: "Helvetica Neue", helvetica, arial;
+  font-size: 12px;
+  margin:0;
+}
+.flexible {
+  flex-grow:1;
+}
+.hidden {
+  display: none !important;
+}
+.loading {
+  width: 100px;
+  display: block;
+  margin: 0px auto;
+}
+.noty_body {
+  font-size: 12px !important;
+}
+.items {
+  text-align: center;
+}
+h2 {
+  padding: 100px 0 20px;
+  text-align: center;
+  color: white;
+}
+a {
+  cursor: pointer !important;
+}
+a.row {
+  text-decoration: none;
+  color: rgba(255,255,255,255,0.8);
+  font-size: 12px;
+  color: white;
+  font-family: Menlo, monaco, Courier;
+  display: block;
+}
+#container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#viewport {
+  width: 100%;
+  display: flex;
+  flex-grow: 1;
+}
+#cy {
+  flex-grow: 1;
+}
+#header {
+  display:flex;
+  padding: 10px;
+  background: #1a1a1a;
+  flex-shrink: 0;
+  align-items: center;
+  margin: 0;
+}
+#header a {
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 0 10px 0 0;
+  color: white;
+}
+#tx:focus {
+  outline: none;
+}
+#tx {
+  border: none;
+  /*
+  padding: 5px 7px;
+  */
+  padding: 10px;
+  flex-grow: 1;
+  background: rgba(0,0,0,0.96);
+  color: gold;
+}
+#sidebar {
+  padding: 10px;
+  color: white;
+  /*
+  width: 100%;
+  height: 300px;
+  */
+  width: 300px;
+  font-size: 11px;
+  overflow: auto;
+  margin: 0;
+  background: #1a1a1a;
+  /*
+  display: flex;
+  */
+}
+#sidebar .header {
+  color: white;
+  text-decoration: underline;
+  font-size: 12px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-word;
+}
+#sidebar .status {
+  color: gray;
+  text-align: center;
+}
+#sidebar .status a {
+  color: gray;
+  display: inline-block;
+  padding: 5px;
+}
+#sidebar hr {
+  opacity: 0.02;
+  margin: 20px 0;
+}
+#sidebar h1 {
+  color: silver;
+  text-align: center;
+  font-family: "Helvetica Neue", helvetica, arial;
+  margin: 0;
+}
+#sidebar a {
+  display: block;
+  color: rgba(255,255,255,0.8);
+  padding: 2px 0;
+}
+#sidebar pre {
+  flex-grow: 1;
+  overflow: auto;
+  padding: 10px;
+}
+#sidebar .item {
+  margin-bottom: 20px;
+  padding: 7px;
+}
+#sidebar .item.selected {
+  border-radius: 1px;
+  border: 1px solid gold;
+}
+#handle {
+  flex-shrink: 0;
+  padding: 10px;
+  cursor: pointer;
+}
+#handle:hover {
+  background: rgba(0,0,0,0.7);
+}
+#sidebar #handle:after {
+  font-weight: bold;
+  color: rgba(255,255,255,0.5);
+  font-size: 16px;
+  content: "|";
+}
+#sidebar.open {
+  position: absolute;
+  z-index: 10000;
+  left: 0;
+  right: 0;
+  width: 100%;
+  bottom:0;
+  top: 53px;
+}
+/*
+#modes {
+  text-align: center;
+  margin-bottom: 10px;
+}
+*/
+#modes {
+  position: fixed;
+  bottom:10px;
+  left: 10px;
+  font-size: 11px;
+}
+
+.jscolor {
+  border: none;
+  padding: 2px 4px;
+  text-align: center;
+  width: 50px;
+  margin: 0 2px;
+  border-radius: 10px;
+  font-size: 9px;
+}
+#modes input.jscolor:focus {
+  outline: none;
+}
+#modes a {
+  color: gold;
+  text-decoration: underline;
+  display: inline-block;
+  padding: 5px 2px;
+  cursor: pointer;
+  display: inline-block;
+}
+
+
+.lds-ellipsis {
+  margin: 0 auto;
+  display: block;
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+.lds-ellipsis div {
+  position: absolute;
+  top: 27px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: gray;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+.lds-ellipsis div:nth-child(1) {
+  left: 6px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(2) {
+  left: 6px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(3) {
+  left: 26px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+.lds-ellipsis div:nth-child(4) {
+  left: 45px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0);
+  }
+}
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(19px, 0);
+  }
+}
+
+</style>
+<script>
+var cy
+var h = null
+var m = null
+var viz = null
+var listening = false;
+
+var colors = {
+  i: localStorage.getItem("incomingcolor") ? localStorage.getItem("incomingcolor") : "#F0320C",
+  o: localStorage.getItem("outgoingcolor") ? localStorage.getItem("outgoingcolor") : "#9ACD32",
+}
+
+if(window.location.hash) {
+  var _v = window.location.hash.slice(1)
+  var tokens = _v.split("/")
+  if (tokens.length >= 2) {
+    m = tokens[0]
+    h = tokens[1]
+    if (tokens.length === 3) {
+      viz = tokens[2]
+    } else {
+      viz = null
+    }
+  }
+}
+
+var util = {
+  multiline: function(str) {
+    return str.toString().match(/.{1,20}/g).join("\n");
+  },
+  detect: function(val) {
+    var re = /^[13][a-km-zA-HJ-NP-Z0-9]{26,33}$/
+    var re2 = /^[ ]*[0-9]+[ ]*$/
+    if (re.test(val)) {
+      return "address"
+    } else if (re2.test(val)) {
+      return "block"
+    } else {
+      return "tx"
+    }
+  }
+}
+
+var graph = {
+  address: function(addr, tx) {
+    // diaplay
+    // 1. address vertex
+    // 2. tx vertex
+    // 3. if address => tx, display [address=>tx=>address]
+    // 4. if tx => address, dispaly [address=>tx=>address]
+    var seed = tx.tx.h
+    var inputs = tx.in
+    var outputs = tx.out
+    var prefix = (tx.blk ? "= Block " + tx.blk.i + " =": "= Mempool =")
+    var content = prefix + "\n\n" + util.multiline(seed)
+
+    // Address
+
+    // Edge between the address and the current tx
+
+
+    // Core Tx
+    var input = inputs.filter(function(item) {
+      return item.e.a === addr
+    })
+    var output = outputs.filter(function(item) {
+      return item.e.a === addr
+    })
+    var current = [{data: { id: addr, type: "ellipse", val: util.multiline(addr), kind: "address", prev: (input.length > 0 ? input[0].h : null), color: "white", padding: 0 }}]
+
+    var xput;
+    if (input.length > 0) {
+      // outgoing from address to tx, through input
+      xput = {
+        tx: {
+          v: input.map(function(i) {
+            return {data: { id: seed, type: "diamond", val: util.multiline(seed), kind: "tx", color: "white", padding: 0 }}
+          }),
+          e: input.map(function(i) {
+            return {data: { id: addr + "-" + seed + "-" + i.e.i, source: addr, target: seed, color: colors.i, val: "" }}
+          })
+        },
+        // when it's address => tx, display child addresses of the tx as well
+        address: {
+          v: outputs.map(function(o) {
+            let a = o.e.a
+            //let a = (o.e.a === 'false' ? o.str.slice(0, 200)+"..." : o.e.a)
+            let id = (o.e.a === 'false' ? seed + "#out" + o.e.i : o.e.a)
+            let type = (o.e.a === 'false' ? 'star' : 'ellipse')
+            return {data: { id: id, type: type, val: util.multiline(a), kind: "address", prev: seed, color: "white", padding: 0 }}
+          }),
+          e: outputs.map(function(o) {
+            let a = o.e.a
+            //let a = (o.e.a === 'false' ? o.str.slice(0, 200)+"..." : o.e.a)
+            let id = (o.e.a === 'false' ? seed + "#out" + o.e.i : o.e.a)
+            let edge_id = seed + "-" + o.e.a + "-" + o.e.i
+            let val = o.e.v + "\n(" + parseInt(o.e.v) * 0.00000001 + " BSV)"
+            return {data: { id: edge_id, source: seed, target: id, color: colors.o, val: util.multiline(val) }}
+          })
+        }
+      }
+
+    } else {
+      // incoming from tx to address, through output
+      xput = {
+        tx: {
+          v: output.map(function(o) {
+            return {data: { id: seed, type: "diamond", val: util.multiline(seed), kind: "tx", color: "white", padding: 0 }}
+          }),
+          e: output.map(function(o) {
+            let val = o.e.v + "\n(" + parseInt(o.e.v) * 0.00000001 + " BSV)"
+            return {data: { id: seed + "-" + addr + "-" + o.e.i, source: seed, target: addr, color: colors.o, val: val }}
+          })
+        },
+        address: {
+          //v: [], e: []
+          v: inputs.map(function(i) {
+            return {data: { id: i.e.a, type: "ellipse", val: util.multiline(i.e.a), kind: "address", prev: i.e.h, color: "white", padding: 0 }}
+          }),
+          e: inputs.map(function(i) {
+            let edge_id = i.e.a + "-" + seed + "-" + i.e.i
+            return {data: { id: edge_id, source: i.e.a, target: seed, color: colors.i, val: "" }}
+          })
+        }
+      }
+    }
+    return {
+      v: current.concat(xput.tx.v).concat(xput.address.v),
+      e: xput.tx.e.concat(xput.address.e)
+    }
+  },
+  parse: function(tx) {
+    console.log("tx = ", tx)
+    var seed = tx.tx.h
+    var inputs = tx.in
+    var outputs = tx.out
+    var prefix = (tx.blk ? "= Block " + tx.blk.i + " =": "= Mempool =")
+    var content = prefix + "\n\n" + util.multiline(seed)
+
+    // Core Tx
+    var current = [{ data: { id: seed, type: "diamond", val: content, kind: "tx", color: "white", padding: 0 }}]
+
+    // # Adjacent Addresses
+    //
+    // 1. Incoming Address Vertex
+    var incoming = {
+      address: {
+        v: inputs.map(function(i) {
+          return {data: { id: i.e.a, type: "ellipse", val: util.multiline(i.e.a), kind: "address", prev: i.e.h, color: "white", padding: 0 }}
+        }),
+        e: inputs.map(function(i) {
+          return {data: { id: i.e.a + "-" + seed + "-" + i.e.i , source: i.e.a, target: seed, color: colors.i, val: "" }}
+        })
+      },
+      tx: {
+        v: inputs.map(function(i) {
+          return {data: { id: i.e.h, type: "diamond", val: util.multiline(i.e.h), kind: "tx", color: "white", padding: 0 }}
+        }),
+        e: inputs.map(function(i) {
+          return {data: { id: i.e.h + "-" + i.e.a + "-" + i.e.i, source: i.e.h, target: i.e.a, color: colors.i, val: "" }}
+        })
+      }
+    }
+    var outgoing = {
+      address: {
+        v: outputs.map(function(o) {
+          let a = o.e.a
+          //let a = (o.e.a === 'false' ? o.str.slice(0, 200)+"..." : o.e.a)
+          let id = (o.e.a === 'false' ? seed + "#out" + o.e.i : o.e.a)
+          let type = (o.e.a === 'false' ? 'star' : 'ellipse')
+          return {data: { id: id, type: type, val: util.multiline(a), kind: "address", prev: seed, color: "white", padding: 0 }}
+        }),
+        e: outputs.map(function(o) {
+          let a = o.e.a
+          //let a = (o.e.a === 'false' ? o.str.slice(0, 200)+"..." : o.e.a)
+          let id = (o.e.a === 'false' ? seed + "#out" + o.e.i : o.e.a)
+          let edge_id = seed + "-" + o.e.a + "-" + o.e.i
+          let val = o.e.v + "\n(" + parseInt(o.e.v) * 0.00000001 + " BSV)"
+          return {data: { id: edge_id, source: seed, target: id, color: colors.o, val: util.multiline(val) }}
+        })
+      }
+    }
+    return {
+      v: current.concat(incoming.address.v).concat(outgoing.address.v),
+      e: incoming.address.e.concat(outgoing.address.e)
+    }
+  },
+  render: function(items, mode) {
+    if (cy) {
+      var newItems = []
+      var els = []
+      items.forEach(function(item) {
+        var el = cy.$("#" + item.data.id)
+        if (el.length > 0) {
+          els.push({
+            el: el,
+            data: item.data
+          })
+        } else {
+          newItems.push(item)
+        }
+      })
+      //var newItems = items
+      console.log("Items = ", JSON.stringify(newItems, null,2))
+
+      cy.add(newItems)
+      var payload = {
+        name: "klay",
+        //name: "breadthfirst",
+        //name: "circle",
+        //name: "dagre",
+        animate: true,
+      }
+      if (mode) {
+        payload.name = mode
+      } else if (viz) {
+        payload.name = viz
+      }
+      console.log("Payload = ", payload)
+      els.forEach(function(item) {
+        item.el.data(item.data)
+      })
+      cy.layout(payload).run()
+      console.log("Listen")
+      //graph.listen()
+    } else {
+      var payload = {
+        name: "klay",
+        animate: true,
+      }
+      if (mode) {
+        payload.name = mode
+      } else if (viz) {
+        payload.name = viz
+      }
+      cy = cytoscape({
+        container: document.querySelector("#cy"),
+        elements: items,
+        style: [
+          {
+            selector: "node",
+            style: {
+              "width": 10,
+              "height": 10,
+              "background-color": "transparent",
+              "border-color": "data(color)",
+              "border-width": 2,
+              "padding": "data(padding)",
+              "shape": "data(type)",
+              "text-wrap": "wrap",
+              "text-rotation": "-20deg",
+              "font-size": 2,
+              "text-halign": "right",
+              "color": "rgba(255,255,255,0.5)",
+              "label": "data(val)"
+            }
+          },
+          {
+            selector: ":selected",
+            style: {
+              "padding": 5,
+              "background-color": "transparent",
+              "border-color": "gold",
+              "border-width": 4,
+            }
+          },
+          {
+            selector: "edge",
+            style: {
+              "width": 1,
+              "label": "data(val)",
+              "text-wrap": "wrap",
+              "text-halign": "right",
+              "font-size": 2,
+              "line-color": "data(color)",
+              "target-arrow-color": "data(color)",
+              "text-background-opacity": 1,
+              "text-background-color": "data(color)",
+              "text-border-color": "data(color)",
+              "text-border-width": 5,
+              "text-border-style": "solid",
+              "color": "black",
+              "text-border-color": "data(color)",
+              "text-rotation": "-20deg",
+              "text-border-width": 5,
+              "curve-style": "bezier",
+              "target-arrow-shape": "triangle"
+            }
+          }
+        ],
+        layout: payload
+      });
+      cy.$("#" + h).select()
+      console.log("Selected = ", cy.$(":selected"))
+      cy.once("render", function(e) {
+        console.log("Event = ", e.target)
+        graph.listen()
+      })
+    }
+  },
+  listen: function() {
+    cy.on("tap", function(e) {
+      // Load
+      var o = e.target.json()
+      console.log("o = ", JSON.stringify(o.data, null, 2))
+      if (o.group === 'nodes') {
+        if (o.data.type === 'star') {
+          if (viz) {
+            location.href = location.protocol + "//" + location.host + "#tx/" + o.data.prev + "/" + viz
+          } else {
+            location.href = location.protocol + "//" + location.host + "#tx/" + o.data.prev
+          }
+          sidebar.render(o.data.prev, "tx")
+        } else {
+          load(o)
+          document.querySelector("#tx").value = o.data.id
+          if (viz) {
+            location.href = location.protocol + "//" + location.host + "#" + o.data.kind + "/" + o.data.id + "/" + viz
+          } else {
+            location.href = location.protocol + "//" + location.host + "#" + o.data.kind + "/" + o.data.id
+          }
+        }
+      }
+
+    })
+  }
+}
+
+
+var bitquery = {
+  offset: { },
+  finished: { },
+  query: function(val, kind) {
+    var query
+    if (kind === 'tx') {
+      query = {
+        v: 3,
+        q: {
+          find: {
+            "tx.h": (Array.isArray(val) ? { "$in": val } : val)
+          },
+          skip: bitquery.offset[val],
+          limit: 100
+        }
+      };
+    } else if (kind === 'block') {
+      query = {
+        v: 3,
+        q: {
+          find: {
+            "blk.i": parseInt(val)
+          },
+          skip: bitquery.offset[val],
+        }
+      };
+    } else if (kind === 'address') {
+      query = {
+        v: 3,
+        q: {
+          find: {
+            "$or": [{
+              "in.e.a": val,
+            }, {
+              "out.e.a": val
+            }]
+          },
+          skip: bitquery.offset[val],
+          limit: 100
+          /*
+          sort: {
+            "blk.i": 1
+          }
+          */
+        }
+      };
+    }
+    return query
+  },
+  explorer: function(host, val, kind) {
+    var query = bitquery.query(val, kind)
+    var b64 = btoa(JSON.stringify(query, null, 2));
+    var hosts = {
+      euler: "https://euler.bitdb.network/query/13Q2RdxNQRYaPotZxJ64yZbWuHrpVwut1Z/",
+      chronos: "https://chronos.bitdb.network/query/1P6o45vqLdo6X8HRCZk8XuDsniURmXqiXo/",
+      genesis: "https://genesis.bitdb.network/query/1FnauZ9aUH2Bex6JzdcV4eNX7oLSSEbxtN/",
+      meta: "https://meta.bitdb.network/query/18uQBWMhHgiieR6FnQtXDDba8T97LVu5uH/",
+    }
+    return hosts[host] + b64;
+  },
+  get: function(host, val, kind) {
+    console.log("## ", host, val, kind)
+    var query
+    if (kind) {
+      if (typeof bitquery.offset[val] !== 'undefined') {
+        bitquery.offset[val]+=100
+      } else {
+        bitquery.offset[val]=0
+      }
+      console.log("offset = ", bitquery.offset[val])
+      query = bitquery.query(val, kind)
+    } else {
+      query = val
+    }
+    console.log("query = ", query)
+    var b64 = btoa(JSON.stringify(query));
+    var hosts = {
+      euler: "https://euler.bitdb.network/q/13Q2RdxNQRYaPotZxJ64yZbWuHrpVwut1Z/",
+      chronos: "https://chronos.bitdb.network/q/1P6o45vqLdo6X8HRCZk8XuDsniURmXqiXo/"
+    }
+    var url = hosts[host] + b64;
+    console.log("url = ", url)
+    var header = { headers: { key: "1KJPjd3p8khnWZTkjhDYnywLB2yE1w5BmU" } };
+    return fetch(url, header).then(function(r) {
+      return r.json()
+    })
+  }
+}
+
+
+var sidebar = {
+  template: function(o) {
+    return "<a target='_blank' href='" + o.url + "'>" + o.text + "</a>"
+  },
+  render: function(val, type, data) {
+    var el = document.querySelector("#sidebar .content")
+    var child = document.createElement("div")
+    /*
+    el.querySelectorAll(".item").forEach(function(e) {
+      e.classList.remove("selected")
+    })
+    */
+    child.className = 'item'
+    var header = "<a class='header' data-id='" + val + "'>" + type + "<br>" + val + "</a>"
+    if (type === 'tx') {
+      var content = [{
+        text: "btc.com", url: "https://bsv.btc.com/" + val
+      }, {
+        text: "hugeblock", url: "https://hugeblock.info/tx/" + val
+      }, {
+        text: "whatsonchain", url: "https://whatsonchain.com/tx/" + val
+      }, {
+        text: "genesis", url: bitquery.explorer("genesis", val, type)
+      }, {
+        text: "euler", url: bitquery.explorer("euler", val, type)
+      }].map(sidebar.template).join("")
+
+      // app protocols
+      // content += apps.render(data)
+      child.innerHTML = header + content
+      el.insertBefore(child, el.firstChild)
+      child.querySelector(".header").addEventListener("click", function(e) {
+        //cy.$("#" + e.target.dataset.id).select()
+        if (viz) {
+          location.href = location.protocol + "//" + location.host + "#tx/" + e.target.dataset.id + "/" + viz
+        } else {
+          location.href = location.protocol + "//" + location.host + "#tx/" + e.target.dataset.id
+        }
+        location.reload()
+      })
+    } else if (type === 'block') {
+      var content = [{
+        text: "btc.com", url: "https://bsv.btc.com/" + val
+      }, {
+        text: "hugeblock", url: "https://hugeblock.info/address/" + val
+      }, {
+        text: "whatsonchain", url: "https://whatsonchain.com/address/" + val
+      }, {
+        text: "chronos bitdb", url: bitquery.explorer("chronos", val, type)
+      }, {
+        text: "euler bitdb", url: bitquery.explorer("euler", val, type)
+      }, {
+        text: "genesis bitdb", url: bitquery.explorer("genesis", val, type)
+      }, {
+        text: "meta", url: bitquery.explorer("meta", val, type)
+      }].map(sidebar.template).join("")
+      child.innerHTML = header + content
+      el.insertBefore(child, el.firstChild)
+      child.querySelector(".header").addEventListener("click", function(e) {
+        //cy.$("#" + e.target.dataset.id).select()
+        if (viz) {
+          location.href = location.protocol + "//" + location.host + "#tx/" + e.target.dataset.id + "/" + viz
+        } else {
+          location.href = location.protocol + "//" + location.host + "#tx/" + e.target.dataset.id
+        }
+        location.reload()
+      })
+    } else if (type === 'address') {
+      var content = [{
+        text: "btc.com", url: "https://bsv.btc.com/" + val
+      }, {
+        text: "hugeblock", url: "https://hugeblock.info/address/" + val
+      }, {
+        text: "whatsonchain", url: "https://whatsonchain.com/address/" + val
+      }, {
+        text: "chronos bitdb", url: bitquery.explorer("chronos", val, type)
+      }, {
+        text: "euler bitdb", url: bitquery.explorer("euler", val, type)
+      }, {
+        text: "genesis bitdb", url: bitquery.explorer("genesis", val, type)
+      }].map(sidebar.template).join("")
+      child.innerHTML = header + content
+      el.insertBefore(child, el.firstChild)
+      child.querySelector(".header").addEventListener("click", function(e) {
+        //cy.$("#" + e.target.dataset.id).select()
+        if (viz) {
+          location.href = location.protocol + "//" + location.host + "#address/" + e.target.dataset.id + "/" + viz
+        } else {
+          location.href = location.protocol + "//" + location.host + "#address/" + e.target.dataset.id
+        }
+        location.reload()
+      })
+    }
+  }
+}
+
+var socket;
+var listen = function() {
+  var query = { "v": 3, "q": { "db": "u", "find": {} } }
+  var b64 = btoa(JSON.stringify(query))
+  var url = "https://genesis.bitdb.network/s/1FnauZ9aUH2Bex6JzdcV4eNX7oLSSEbxtN/" + b64;
+  socket = new EventSource(url)
+  document.querySelector(".status .caption").innerHTML = "listening..."
+  document.querySelector(".loading").classList.remove("hidden")
+  socket.onmessage = function(e) {
+    var r = JSON.parse(e.data)
+    if (r.type === 'u') {
+      var data = {
+        v: [], e: []
+      }
+      var tx = r.data[0]
+      var data = graph.parse(tx)
+      var x = data.v.concat(data.e)
+      graph.render(x)
+      sidebar.render(tx.tx.h, "tx", tx)
+    }
+  }
+}
+var unlisten = function() {
+  if (socket) {
+    socket.close()
+    console.log("Closed socket")
+  }
+  document.querySelector("#sidebar .status .caption").innerHTML = "paused"
+  document.querySelector("#sidebar .loading").classList.add("hidden")
+}
+var load = function(o) {
+  if (o) {
+    if (o.data.kind === 'tx') {
+      /******************************************************************************
+      *
+      *   1. load tx
+      *     - get incoming address (in.e.a)
+      *     - get outgoing address (out.e.a)
+      *
+      ******************************************************************************/
+      if (bitquery.finished[o.data.id]) {
+        alert("finished")
+      } else {
+        bitquery.get("euler", o.data.id, o.data.kind).then(function(r) {
+          var items = r.c.concat(r.u)
+          console.log("size=",items.length)
+          if (items.length === 0) {
+            console.log("All iterated")
+            bitquery.finished[o.data.id] = true
+          }
+          var tx = items[0]
+          var data = graph.parse(tx)
+          var x = data.v.concat(data.e)
+          graph.render(x)
+          sidebar.render(o.data.id, o.data.kind, tx)
+          //document.querySelector("#sidebar pre").innerHTML = JSON.stringify(r, null, 2)
+        })
+      }
+    } else if (o.data.kind === 'address') {
+      /******************************************************************************
+      *
+      *   2. load address
+      *     - get all txs whose in.e.a and out.e.a match the address, sorted by blk.i
+      *
+      ******************************************************************************/
+      if (bitquery.finished[o.data.id]) {
+        alert("finished")
+      } else {
+        bitquery.get("euler", o.data.id, o.data.kind).then(function(r) {
+          var items = r.c.concat(r.u)
+          console.log(JSON.stringify(items, null, 2))
+          console.log("size=",items.length)
+          if (items.length === 0) {
+            console.log("All iterated")
+            bitquery.finished[o.data.id] = true
+          }
+          var data = {
+            v: [], e: []
+          }
+          items.forEach(function(x) {
+            var item = graph.address(o.data.id, x)
+            data.v = data.v.concat(item.v)
+            data.e = data.e.concat(item.e)
+          })
+          var x = data.v.concat(data.e)
+          graph.render(x)
+          sidebar.render(o.data.id, o.data.kind)
+        })
+      }
+    } else if (o.data.kind === 'block') {
+      /******************************************************************************
+      *
+      *   2. load block
+      *     - get all txs whose blk.i match the o.data.id, sorted by blk.i
+      *
+      ******************************************************************************/
+      bitquery.get("euler", o.data.id, o.data.kind).then(function(r) {
+        var items = r.c.concat(r.u)
+        var data = {
+          v: [], e: []
+        }
+        items.forEach(function(x) {
+          var item = graph.parse(x)
+          data.v = data.v.concat(item.v)
+          data.e = data.e.concat(item.e)
+        })
+        var x = data.v.concat(data.e)
+        graph.render(x)
+        sidebar.render(o.data.id, o.data.kind)
+      })
+    }
+  } else {
+    // load list
+    /*
+    bitquery.get("chronos", {
+      v: 3, q: { find: {}, limit: 10 }
+    }).then(function(res) {
+      var items = res.t
+      var content = items.map(function(item) {
+        return "<a class='row' href='#tx/"+item.tx.h+"'>"+item.timeago+" - "+item.tx.h+"</a>"
+      }).join("")
+      document.querySelector("#cy").innerHTML = "<h2>Tx</h2><div class='items'>"+content+"</div>"
+    })
+    document.addEventListener("click", function(e) {
+      if (e.target.className === 'row') {
+        location.reload()
+      }
+    })
+    */
+    bitquery.get("chronos", {
+      v: 3, q: { find: {}, limit: 10 }
+    }).then(function(res) {
+      var items = res.t
+      var data = {
+        v: [], e: []
+      }
+      items.forEach(function(x) {
+        var item = graph.parse(x)
+        data.v = data.v.concat(item.v)
+        data.e = data.e.concat(item.e)
+      })
+      var x = data.v.concat(data.e)
+      graph.render(x)
+    })
+  }
+  if (h) {
+    unlisten()
+  } else {
+    listen()
+  }
+}
+jscolor.lookupClass = null
+document.addEventListener("DOMContentLoaded", function(e) {
+  if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+    document.querySelector("#sidebar").classList.add("hidden")
+  }
+  if (h) {
+    load({ data: { id: h, kind: m } })
+  } else {
+    load()
+  }
+  document.querySelector(".colors").innerHTML = "<input id='incomingcolor' class='jscolor'></input><input id='outgoingcolor' class='jscolor'></input>"
+  document.querySelector("#incomingcolor").value = colors.i
+  document.querySelector("#outgoingcolor").value = colors.o
+  console.log(JSON.stringify(colors))
+  var incomingcolor = new jscolor(document.querySelector("#incomingcolor"))
+  var outgoingcolor = new jscolor(document.querySelector("#outgoingcolor"))
+
+  document.querySelector("#modes .colors").addEventListener("change", function(e) {
+    e.stopPropagation()
+    console.log(e.target.value)
+    let id = e.target.id
+    localStorage.setItem(id, "#" + e.target.value)
+    location.reload()
+  })
+  document.querySelector("#modes .layouts").addEventListener("click", function(e) {
+    console.log(e.target)
+    viz = e.target.id
+    console.log("h = ", h)
+    console.log("viz = ", viz)
+    if (h) {
+      if (viz) {
+        location.href = location.protocol + "//" + location.host + "#" + m + "/" + h + "/" + viz
+      } else {
+        location.href = location.protocol + "//" + location.host + "#" + m + "/" + h
+      }
+    }
+    graph.render([], e.target.id)
+  })
+  document.querySelector("form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var val = e.target.querySelector("#tx").value
+    var kind = util.detect(val)
+    location.href = location.protocol + "//" + location.host + "#" + kind + "/" + val
+    location.reload()
+  })
+  document.querySelector("#play").addEventListener("click", function(e) {
+    listen()
+  })
+  document.querySelector("#pause").addEventListener("click", function(e) {
+    unlisten()
+  })
+})
+</script>
+</head>
+<body>
+<div id='container'>
+  <form id='header'>
+    <a href='/'>_bitgraph</a>
+    <input type='text' id='tx' placeholder='enter tx id, bitcoin address, or block height to navigate'>
+  </form>
+  <div id='viewport'>
+    <div id='cy'></div>
+    <div id='sidebar'>
+      <div class="loading lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+      <div class='status'>
+        <div class='caption'>listening...</div>
+        <a id='play'>play</a>|<a id='pause'>pause</a>
+      </div>
+      <hr>
+      <div class='content'>
+      </div>
+    </div>
+  </div>
+  <div id='modes'>
+    <span class='colors'>
+    </span>
+    <span class='layouts'>
+    <a id='klay'>klay</a>
+    <a id='dagre'>dagre</a>
+    <a id='circle'>circle</a>
+    <a id='concentric'>concentric</a>
+    <a id='breadthfirst'>breadthfirst</a>
+    </span>
+  </div>
+</div>
+</body>
+</html>
