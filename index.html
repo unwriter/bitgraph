@@ -33,7 +33,7 @@ body {
 #modal {
   position: fixed;
   top:0;
-  left:0;      {
+  left:0;
   right:0;
   bottom:0;
   z-index: 10000;
@@ -42,7 +42,7 @@ body {
 }
 #modal img {
   height: 100%;
-}   }
+}
 #export {
   background: gold;
   padding: 2px 5px;
@@ -435,7 +435,6 @@ var graph = {
     }
   },
   parse: function(tx) {
-    console.log("tx = ", tx)
     var seed = tx.tx.h
     var inputs = tx.in
     var outputs = tx.out
@@ -506,8 +505,6 @@ var graph = {
         }
       })
       //var newItems = items
-      console.log("Items = ", JSON.stringify(newItems, null,2))
-
       cy.add(newItems)
       var payload = {
         name: "klay",
@@ -521,12 +518,10 @@ var graph = {
       } else if (viz) {
         payload.name = viz
       }
-      console.log("Payload = ", payload)
       els.forEach(function(item) {
         item.el.data(item.data)
       })
       cy.layout(payload).run()
-      console.log("Listen")
       //graph.listen()
     } else {
       var payload = {
@@ -596,9 +591,7 @@ var graph = {
         layout: payload
       });
       cy.$("#" + h).select()
-      console.log("Selected = ", cy.$(":selected"))
       cy.once("render", function(e) {
-        console.log("Event = ", e.target)
         graph.listen()
       })
     }
@@ -607,7 +600,6 @@ var graph = {
     cy.on("tap", function(e) {
       // Load
       var o = e.target.json()
-      console.log("o = ", JSON.stringify(o.data, null, 2))
       if (o.group === 'nodes') {
         if (o.data.type === 'star') {
           if (viz) {
@@ -693,7 +685,6 @@ var bitquery = {
     return hosts[host] + b64;
   },
   get: function(host, val, kind) {
-    console.log("## ", host, val, kind)
     var query
     if (kind) {
       if (typeof bitquery.offset[val] !== 'undefined') {
@@ -701,19 +692,16 @@ var bitquery = {
       } else {
         bitquery.offset[val]=0
       }
-      console.log("offset = ", bitquery.offset[val])
       query = bitquery.query(val, kind)
     } else {
       query = val
     }
-    console.log("query = ", query)
     var b64 = btoa(JSON.stringify(query));
     var hosts = {
       euler: "https://euler.bitdb.network/q/13Q2RdxNQRYaPotZxJ64yZbWuHrpVwut1Z/",
       chronos: "https://chronos.bitdb.network/q/1P6o45vqLdo6X8HRCZk8XuDsniURmXqiXo/"
     }
     var url = hosts[host] + b64;
-    console.log("url = ", url)
     var header = { headers: { key: "1KJPjd3p8khnWZTkjhDYnywLB2yE1w5BmU" } };
     return fetch(url, header).then(function(r) {
       return r.json()
@@ -863,9 +851,7 @@ var load = function(o) {
       } else {
         bitquery.get("euler", o.data.id, o.data.kind).then(function(r) {
           var items = r.c.concat(r.u)
-          console.log("size=",items.length)
           if (items.length === 0) {
-            console.log("All iterated")
             bitquery.finished[o.data.id] = true
           }
           var tx = items[0]
@@ -888,10 +874,7 @@ var load = function(o) {
       } else {
         bitquery.get("euler", o.data.id, o.data.kind).then(function(r) {
           var items = r.c.concat(r.u)
-          console.log(JSON.stringify(items, null, 2))
-          console.log("size=",items.length)
           if (items.length === 0) {
-            console.log("All iterated")
             bitquery.finished[o.data.id] = true
           }
           var data = {
@@ -982,22 +965,17 @@ document.addEventListener("DOMContentLoaded", function(e) {
   document.querySelector(".colors").innerHTML = "<input id='incomingcolor' class='jscolor'></input><input id='outgoingcolor' class='jscolor'></input>"
   document.querySelector("#incomingcolor").value = colors.i
   document.querySelector("#outgoingcolor").value = colors.o
-  console.log(JSON.stringify(colors))
   var incomingcolor = new jscolor(document.querySelector("#incomingcolor"))
   var outgoingcolor = new jscolor(document.querySelector("#outgoingcolor"))
 
   document.querySelector("#modes .colors").addEventListener("change", function(e) {
     e.stopPropagation()
-    console.log(e.target.value)
     let id = e.target.id
     localStorage.setItem(id, "#" + e.target.value)
     location.reload()
   })
   document.querySelector("#modes .layouts").addEventListener("click", function(e) {
-    console.log(e.target)
     viz = e.target.id
-    console.log("h = ", h)
-    console.log("viz = ", viz)
     if (h) {
       if (viz) {
         location.href = location.protocol + "//" + location.host + "#" + m + "/" + h + "/" + viz
