@@ -30,6 +30,24 @@ body {
   font-size: 12px;
   margin:0;
 }
+#modal {
+  position: fixed;
+  top:0;
+  left:0;      {
+  right:0;
+  bottom:0;
+  z-index: 10000;
+  background: black;
+  text-align: center;
+}
+#modal img {
+  height: 100%;
+}   }
+#export {
+  background: gold;
+  padding: 2px 5px;
+  cursor: pointer;
+}
 .flexible {
   flex-grow:1;
 }
@@ -1003,6 +1021,15 @@ document.addEventListener("DOMContentLoaded", function(e) {
   document.querySelector("#pause").addEventListener("click", function(e) {
     unlisten()
   })
+  document.querySelector("#export").addEventListener("click", function(e) {
+    let img = cy.png()
+    let i = document.createElement("img")
+    i.setAttribute("src", img)
+    let modal = document.createElement("div")
+    modal.id = 'modal'
+    modal.appendChild(i)
+    document.body.appendChild(modal)
+  })
 })
 </script>
 </head>
@@ -1028,6 +1055,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
   <div id='modes'>
     <span class='colors'>
     </span>
+    <span id='export'>export</span>
+    <span id='download'></span>
     <span class='layouts'>
     <a id='klay'>klay</a>
     <a id='dagre'>dagre</a>
